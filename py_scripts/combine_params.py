@@ -105,7 +105,8 @@ def get_params_net_dataloader(
 
     # setting random seed. Want to do this before the models are initialized. 
     if params.random_seed is not None: 
-        pl.utilities.seed.seed_everything(seed=params.random_seed, workers=False)
+        # pl.utilities.seed.seed_everything(seed=params.random_seed, workers=False)
+        pl.seed_everything(seed=params.random_seed, workers=False)
 
 
     # getting whatever was set from either the loaded in model or the dataset: 

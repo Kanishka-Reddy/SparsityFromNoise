@@ -190,42 +190,42 @@ model_params = EasyDict(
         classification=False, 
     ), 
 
-    DIFFUSION_ATTN = dict(
-
-        model_class  = ATTN_DIFFUSION, 
-
-        opt='SparseAdam',
-        lr=0.01,
-
-        batch_size=512, 
-        #dataset_size = 10,
-        diffusion_noise=0.1,
-
-        auto_assoc = True, 
-        l2_norm_k_and_q = True, 
-
-        beta_init = 2,
-        
-        log_receptive_fields = False,
-        log_model_predictions=False,
-        classification=False, 
-
-    ), 
-
-    RESNET50 = dict(
-        model_class  = ResNet50, 
-        batch_size=1024,
-        log_receptive_fields = False,
-        load_just_state_dict = True,
-
-        wide_resnet=False, 
-
-        check_val_every_n_epoch = 5,
-
-        normalize_n_transform_inputs = True, 
-        use_convmixer_transforms = False, 
-
-    ),
+    # DIFFUSION_ATTN = dict(
+    #
+    #     model_class  = ATTN_DIFFUSION,
+    #
+    #     opt='SparseAdam',
+    #     lr=0.01,
+    #
+    #     batch_size=512,
+    #     #dataset_size = 10,
+    #     diffusion_noise=0.1,
+    #
+    #     auto_assoc = True,
+    #     l2_norm_k_and_q = True,
+    #
+    #     beta_init = 2,
+    #
+    #     log_receptive_fields = False,
+    #     log_model_predictions=False,
+    #     classification=False,
+    #
+    # ),
+    #
+    # RESNET50 = dict(
+    #     model_class  = ResNet50,
+    #     batch_size=1024,
+    #     log_receptive_fields = False,
+    #     load_just_state_dict = True,
+    #
+    #     wide_resnet=False,
+    #
+    #     check_val_every_n_epoch = 5,
+    #
+    #     normalize_n_transform_inputs = True,
+    #     use_convmixer_transforms = False,
+    #
+    # ),
 
     CONVMIXER =dict(
         # not implementing learning rate schedule for now. 

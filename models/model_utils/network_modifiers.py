@@ -1,5 +1,6 @@
 import torch 
 import torch.nn.utils.prune as prune
+import numpy as np
 
 '''def flatten_sequential(net):
     list_of_layers = []

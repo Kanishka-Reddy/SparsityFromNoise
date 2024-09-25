@@ -13,7 +13,7 @@ dataset_name = "Cached_ConvMixer_WTransforms_ImageNet32_CIFAR10"
 
 load_path = None
 
-output_directory = "FILL-IN"
+output_directory = "outputs"
 
 extras = dict(
 
@@ -33,7 +33,7 @@ if load_path:
 model_params, model, data_module = get_params_net_dataloader(model_name, dataset_name, load_from_checkpoint=load_path, experiment_param_modifications=extras)
 
 if model_params.use_wandb:
-    wandb_logger = WandbLogger(project="Diffusion-SDM", entity="", save_dir=output_directory)
+    wandb_logger = WandbLogger(project="Diffusion-SDM", entity="kaniai", save_dir=output_directory)
     model_params.logger = wandb_logger
 else: 
     model_params.logger = None
@@ -62,7 +62,9 @@ temp_trainer = pl.Trainer(
         check_val_every_n_epoch=1,
         num_sanity_val_steps = False,
         enable_progress_bar = True,
-        gpus=gpu, 
+        # gpus=gpu,
+        accelerator="cpu" if gpu is None else "gpu",
+        devices=1 if gpu is None else len(gpu),  # For CPU, use at least 1 core
         callbacks = callbacks,
         enable_checkpointing=False,
         #checkpoint_callback=checkpoint_callback, # dont save these test models. 

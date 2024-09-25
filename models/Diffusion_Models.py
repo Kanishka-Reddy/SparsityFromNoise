@@ -23,6 +23,44 @@ def perc_closest_targets(pred, target):
     acc = (inds==torch.arange(len(target), device=pred.device)).type(torch.float).mean().detach()
     return acc 
 
+# class NoiseLayer(nn.Module):
+#     def __init__(self, noise_amount, noise_type="normal"):
+#         super().__init__()
+#
+#         self.prev_noise_amount = copy.copy(noise_amount)
+#         self.noise_amount = noise_amount
+#
+#         if noise_type == "normal":
+#             self.noise_sample = lambda x: self.noise_amount*torch.randn_like(x)
+#
+#         else:
+#             if self.noise_amount==0.0:
+#                 self.noise_amount=0.00000000000001
+#             if noise_type == "laplace":
+#                 self.noise_dist = torch.distributions.laplace.Laplace(torch.tensor([0.0]), torch.tensor([self.noise_amount]))
+#                 self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach()
+#             elif noise_type == "expo":
+#                 self.noise_dist = torch.distributions.exponential.Exponential(torch.tensor([self.noise_amount]))
+#                 self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach()
+#             elif noise_type == "poisson":
+#                 self.noise_dist = torch.distributions.poisson.Poisson(torch.tensor([self.noise_amount]))
+#                 self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach()
+#             else:
+#                 raise NotImplementedError()
+#
+#     def turn_off_diffusion_noise(self):
+#         #print("Turning off diffusion noise")
+#         self.prev_noise_amount = copy.copy(self.noise_amount)
+#         self.noise_amount = 0.0
+#
+#     def turn_on_diffusion_noise(self):
+#         #print("Turning off diffusion noise")
+#         self.noise_amount = copy.copy(self.prev_noise_amount)
+#
+#     def forward(self, x):
+#         return x + self.noise_sample(x)
+
+
 class NoiseLayer(nn.Module):
     def __init__(self, noise_amount, noise_type="normal"):
         super().__init__()
@@ -31,34 +69,41 @@ class NoiseLayer(nn.Module):
         self.noise_amount = noise_amount
 
         if noise_type == "normal":
-            self.noise_sample = lambda x: self.noise_amount*torch.randn_like(x)
+            self.noise_sample = lambda x: self.noise_amount * torch.randn_like(x) * x  # Multiplicative noise
 
-        else: 
-            if self.noise_amount==0.0:
-                self.noise_amount=0.00000000000001
+        else:
+            # handle other distributions if necessary, with a multiplicative twist, though we'll do gaussian for now
+            if self.noise_amount == 0.0:
+                self.noise_amount = 0.00000000000001  # Ensure noise_amount isn't zero to avoid errors
             if noise_type == "laplace":
-                self.noise_dist = torch.distributions.laplace.Laplace(torch.tensor([0.0]), torch.tensor([self.noise_amount]))
-                self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach()
+                self.noise_dist = torch.distributions.laplace.Laplace(
+                    torch.tensor([0.0]), torch.tensor([self.noise_amount])
+                )
+                self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach() * x
             elif noise_type == "expo":
-                self.noise_dist = torch.distributions.exponential.Exponential(torch.tensor([self.noise_amount]))
-                self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach()
+                self.noise_dist = torch.distributions.exponential.Exponential(
+                    torch.tensor([self.noise_amount])
+                )
+                self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach() * x
             elif noise_type == "poisson":
-                self.noise_dist = torch.distributions.poisson.Poisson(torch.tensor([self.noise_amount]))
-                self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach()
-            else: 
+                self.noise_dist = torch.distributions.poisson.Poisson(
+                    torch.tensor([self.noise_amount])
+                )
+                self.noise_sample = lambda x: self.noise_dist.sample(x.shape).squeeze().to(x.device).detach() * x
+            else:
                 raise NotImplementedError()
 
     def turn_off_diffusion_noise(self):
-        #print("Turning off diffusion noise")
         self.prev_noise_amount = copy.copy(self.noise_amount)
         self.noise_amount = 0.0
-        
+
     def turn_on_diffusion_noise(self):
-        #print("Turning off diffusion noise")
         self.noise_amount = copy.copy(self.prev_noise_amount)
 
     def forward(self, x):
-        return x + self.noise_sample(x)
+        return x * (1 + self.noise_sample(x))  # applying multiplicative noise
+
+
 
 class Diffusion_Base(BaseModel):
     def __init__(self, params):
@@ -70,7 +115,7 @@ class Diffusion_Base(BaseModel):
         self.log_results =True 
 
         if params.classification:
-            assert params.transpose==False, "Cant tranpose with classification"
+            assert params.transpose==False, "Cant transpose with classification"
 
         self.net_layers = []
 
